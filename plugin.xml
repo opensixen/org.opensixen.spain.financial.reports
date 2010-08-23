@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.opensixen.osgi.interfaces.ICommand">
+      <command
+            class="org.opensixen.spain.financial.reports.ReportLibroDiario"
+            name="diario">
+      </command>
+   </extension>
+   <extension
+         point="org.opensixen.osgi.interfaces.ICommand">
+      <command
+            class="org.opensixen.spain.financial.reports.ReportSumasYSaldos"
+            name="sumas">
+      </command>
+   </extension>
+
+</plugin>
