@@ -12,5 +12,4 @@ Require-Bundle: org.opensixen.base;bundle-version="1.0.0",
  org.opensixen.libs;bundle-version="1.0.0",
  org.opensixen.core.reports;bundle-version="1.0.0",
  org.opensixen.core.common;bundle-version="1.0.0"
-Export-Package: org.opensixen.model,
- org.opensixen.spain.financial.reports
+Export-Package: org.opensixen.spain.financial.reports
