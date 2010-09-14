@@ -38,7 +38,8 @@ public class ReportSumasYSaldos extends AbstractDynamicReport implements IComman
 	 */
 	@Override
 	protected ColumnDefinition[] getColumns() {
-		ColumnDefinition[] cols = { new ColumnDefinition("value", "Cuenta", String.class, 90),
+		ColumnDefinition[] cols = { new ColumnDefinition("value", "Cuenta", String.class, 80),
+								new ColumnDefinition("name", "", String.class, 240),
 								new ColumnDefinition("saldoinicial", "Inicial", BigDecimal.class, 90),
 								new ColumnDefinition("debe", "Debe", BigDecimal.class, 90),
 								new ColumnDefinition("haber", "Haber", BigDecimal.class, 90),
