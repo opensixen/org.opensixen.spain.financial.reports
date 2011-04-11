@@ -1,0 +1,921 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="CuentaPerdidasGananciasMHP" pageWidth="595" pageHeight="842" columnWidth="535" leftMargin="30" rightMargin="30" topMargin="20" bottomMargin="20">
+	<property name="ireport.scriptlethandling" value="0"/>
+	<property name="ireport.encoding" value="UTF-8"/>
+	<property name="ireport.zoom" value="1.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="144"/>
+	<import value="net.sf.jasperreports.engine.*"/>
+	<import value="java.util.*"/>
+	<import value="net.sf.jasperreports.engine.data.*"/>
+	<parameter name="DateAcct1" class="java.sql.Timestamp"/>
+	<parameter name="DateAcct2" class="java.sql.Timestamp"/>
+	<parameter name="AD_Org_ID" class="java.math.BigDecimal">
+		<defaultValueExpression><![CDATA[new BigDecimal(0.00)]]></defaultValueExpression>
+	</parameter>
+	<parameter name="AD_Client_ID" class="java.math.BigDecimal">
+		<defaultValueExpression><![CDATA[new BigDecimal(0.00)]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[(
+SELECT		(SELECT aux.name FROM adempiere.ad_org aux WHERE aux.ad_org_id = $P{AD_Org_ID}) AS organization
+		, eva.value
+		, eva.value::character(3) AS account3
+		, eva.value::character(4) AS account4
+		, SUM(fac.amtacctcr - fac.amtacctdr) AS amount
+		, 0::integer AS before
+FROM 		adempiere.c_elementvalue eva
+JOIN		adempiere.fact_acct fac		ON fac.account_id = eva.c_elementvalue_id
+JOIN		adempiere.ad_table tab		ON tab.ad_table_id = fac.ad_table_id
+WHERE		fac.dateacct BETWEEN TO_TIMESTAMP($P{DateAcct1}::text,'YYYY-MM-DD')
+		AND TO_TIMESTAMP($P{DateAcct2}::text,'YYYY-MM-DD')
+AND		fac.ad_org_id=$P{AD_Org_ID}
+
+GROUP BY	eva.value
+)
+
+UNION
+
+(
+SELECT		(SELECT aux.name FROM adempiere.ad_org aux WHERE aux.ad_org_id = $P{AD_Org_ID}) AS organization
+		, eva.value
+		, eva.value::character(3) AS account3
+		, eva.value::character(4) AS account4
+		, SUM(fac.amtacctcr - fac.amtacctdr) AS amount
+		, 1::integer AS before
+FROM 		adempiere.c_elementvalue eva
+JOIN		adempiere.fact_acct fac		ON fac.account_id = eva.c_elementvalue_id
+JOIN		adempiere.ad_table tab		ON tab.ad_table_id = fac.ad_table_id
+WHERE		fac.dateacct BETWEEN TO_TIMESTAMP($P{DateAcct1}::text,'YYYY-MM-DD')- interval '1 year'
+		AND TO_TIMESTAMP($P{DateAcct2}::text,'YYYY-MM-DD')- interval '1 year'
+AND		fac.ad_org_id=$P{AD_Org_ID}
+
+GROUP BY	eva.value
+)
+
+ORDER BY	value ASC]]>
+	</queryString>
+	<field name="organization" class="java.lang.String"/>
+	<field name="value" class="java.lang.String"/>
+	<field name="account3" class="java.lang.String"/>
+	<field name="account4" class="java.lang.String"/>
+	<field name="amount" class="java.math.BigDecimal"/>
+	<field name="before" class="java.lang.Integer"/>
+	<variable name="AMT_1" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{before}.intValue() == 0 ) && ( ( $F{value}.startsWith( "700" ) ) || ( $F{value}.startsWith( "701" ) ) || ( $F{value}.startsWith( "702" ) ) || ( $F{value}.startsWith( "703" ) ) || ( $F{value}.startsWith( "704" ) ) || ( $F{value}.startsWith( "705" ) ) || ( $F{value}.startsWith( "706" ) ) || ( $F{value}.startsWith( "708" ) ) || ( $F{value}.startsWith( "709" ) ) ) )
+?
+( $V{AMT_1}.add( $F{amount} ) )
+:
+( $V{AMT_1} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="AMT_2" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{before}.intValue() == 0 ) && ( ( $F{value}.startsWith( "6980" ) ) || ( $F{value}.startsWith( "71" ) ) || ( $F{value}.startsWith( "7930" ) ) ) )
+?
+( $V{AMT_2}.add( $F{amount} ) )
+:
+( $V{AMT_2} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="AMT_3" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{before}.intValue() == 0 ) && ( $F{value}.startsWith( "73" ) ) )
+?
+( $V{AMT_3}.add( $F{amount} ) )
+:
+( $V{AMT_3} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="AMT_4" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{before}.intValue() == 0 ) && ( ( $F{value}.startsWith( "600" ) ) || ( $F{value}.startsWith( "601" ) ) || ( $F{value}.startsWith( "602" ) ) || ( $F{value}.startsWith( "606" ) ) || ( $F{value}.startsWith( "607" ) ) || ( $F{value}.startsWith( "608" ) ) || ( $F{value}.startsWith( "609" ) ) || ( $F{value}.startsWith( "61" ) ) || ( $F{value}.startsWith( "6931" ) ) || ( $F{value}.startsWith( "6932" ) ) || ( $F{value}.startsWith( "6933" ) ) || ( $F{value}.startsWith( "7931" ) ) || ( $F{value}.startsWith( "7932" ) ) || ( $F{value}.startsWith( "7933" ) ) ) )
+?
+( $V{AMT_4}.add( $F{amount} ) )
+:
+( $V{AMT_4} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="AMT_5" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{before}.intValue() == 0 ) && ( ( $F{value}.startsWith( "740" ) ) || ( $F{value}.startsWith( "747" ) ) || ( $F{value}.startsWith( "75" ) ) || ( $F{value}.startsWith( "778" ) ) ) )
+?
+( $V{AMT_5}.add( $F{amount} ) )
+:
+( $V{AMT_5} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="AMT_6" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{before}.intValue() == 0 ) && ( $F{value}.startsWith( "64" ) ) )
+?
+( $V{AMT_6}.add( $F{amount} ) )
+:
+( $V{AMT_6} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="AMT_7" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{before}.intValue() == 0 ) && ( ( $F{value}.startsWith( "62" ) ) || ( $F{value}.startsWith( "631" ) ) || ( $F{value}.startsWith( "634" ) ) || ( $F{value}.startsWith( "636" ) ) || ( $F{value}.startsWith( "639" ) ) || ( $F{value}.startsWith( "65" ) ) || ( $F{value}.startsWith( "678" ) ) || ( $F{value}.startsWith( "694" ) ) || ( $F{value}.startsWith( "695" ) ) || ( $F{value}.startsWith( "794" ) ) || ( $F{value}.startsWith( "7954" ) ) ) )
+?
+( $V{AMT_7}.add( $F{amount} ) )
+:
+( $V{AMT_7} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="AMT_8" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{before}.intValue() == 0 ) && ( $F{value}.startsWith( "68" ) ) )
+?
+( $V{AMT_8}.add( $F{amount} ) )
+:
+( $V{AMT_8} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="AMT_9" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{before}.intValue() == 0 ) && ( $F{value}.startsWith( "746" ) ) )
+?
+( $V{AMT_9}.add( $F{amount} ) )
+:
+( $V{AMT_9} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="AMT_10" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{before}.intValue() == 0 ) && ( ( $F{value}.startsWith( "7951" ) ) || ( $F{value}.startsWith( "7952" ) ) || ( $F{value}.startsWith( "7955" ) ) ) )
+?
+( $V{AMT_10}.add( $F{amount} ) )
+:
+( $V{AMT_10} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="AMT_11" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{before}.intValue() == 0 ) && ( ( $F{value}.startsWith( "670" ) ) || ( $F{value}.startsWith( "671" ) ) || ( $F{value}.startsWith( "672" ) ) || ( $F{value}.startsWith( "690" ) ) || ( $F{value}.startsWith( "691" ) ) || ( $F{value}.startsWith( "692" ) ) || ( $F{value}.startsWith( "770" ) ) || ( $F{value}.startsWith( "771" ) ) || ( $F{value}.startsWith( "772" ) ) || ( $F{value}.startsWith( "790" ) ) || ( $F{value}.startsWith( "791" ) ) || ( $F{value}.startsWith( "792" ) ) ) )
+?
+( $V{AMT_11}.add( $F{amount} ) )
+:
+( $V{AMT_11} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="AMT_12" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{before}.intValue() == 0 ) && ( ( $F{value}.startsWith( "760" ) ) || ( $F{value}.startsWith( "761" ) ) || ( $F{value}.startsWith( "762" ) ) || ( $F{value}.startsWith( "769" ) ) ) )
+?
+( $V{AMT_12}.add( $F{amount} ) )
+:
+( $V{AMT_12} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="AMT_13" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{before}.intValue() == 0 ) && ( ( $F{value}.startsWith( "660" ) ) || ( $F{value}.startsWith( "661" ) ) || ( $F{value}.startsWith( "662" ) ) || ( $F{value}.startsWith( "664" ) ) || ( $F{value}.startsWith( "665" ) ) || ( $F{value}.startsWith( "669" ) ) ) )
+?
+( $V{AMT_13}.add( $F{amount} ) )
+:
+( $V{AMT_13} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="AMT_14" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{before}.intValue() == 0 ) && ( ( $F{value}.startsWith( "663" ) ) || ( $F{value}.startsWith( "763" ) ) ) )
+?
+( $V{AMT_14}.add( $F{amount} ) )
+:
+( $V{AMT_14} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="AMT_15" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{before}.intValue() == 0 ) && ( ( $F{value}.startsWith( "668" ) ) || ( $F{value}.startsWith( "768" ) ) ) )
+?
+( $V{AMT_15}.add( $F{amount} ) )
+:
+( $V{AMT_15} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="AMT_16" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{before}.intValue() == 0 ) && ( ( $F{value}.startsWith( "666" ) ) || ( $F{value}.startsWith( "667" ) ) || ( $F{value}.startsWith( "673" ) ) || ( $F{value}.startsWith( "675" ) ) || ( $F{value}.startsWith( "696" ) ) || ( $F{value}.startsWith( "697" ) ) || ( $F{value}.startsWith( "698" ) ) || ( $F{value}.startsWith( "699" ) ) || ( $F{value}.startsWith( "766" ) ) || ( $F{value}.startsWith( "773" ) ) || ( $F{value}.startsWith( "775" ) ) || ( $F{value}.startsWith( "796" ) ) || ( $F{value}.startsWith( "797" ) ) || ( $F{value}.startsWith( "798" ) ) || ( $F{value}.startsWith( "799" ) ) ) )
+?
+( $V{AMT_16}.add( $F{amount} ) )
+:
+( $V{AMT_16} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="AMT_17" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{before}.intValue() == 0 ) && ( ( $F{value}.startsWith( "6300" ) ) || ( $F{value}.startsWith( "6301" ) ) || ( $F{value}.startsWith( "633" ) ) || ( $F{value}.startsWith( "638" ) ) ) )
+?
+( $V{AMT_17}.add( $F{amount} ) )
+:
+( $V{AMT_17} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="AMT_A" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{AMT_1}.add( $V{AMT_2} ).add( $V{AMT_3} ).add( $V{AMT_4} ).add( $V{AMT_5}).add( $V{AMT_6} ).add( $V{AMT_7} ).add( $V{AMT_8} ).add( $V{AMT_9} ).add( $V{AMT_10} ).add( $V{AMT_11} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="AMT_B" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{AMT_12}.add( $V{AMT_13} ).add( $V{AMT_14} ).add( $V{AMT_15} ).add( $V{AMT_16})]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="AMT_C" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{AMT_A}.add( $V{AMT_B} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="AMT_D" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{AMT_C}.add( $V{AMT_17} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="AMT_1_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{before}.intValue() == 1 ) && ( ( $F{value}.startsWith( "700" ) ) || ( $F{value}.startsWith( "701" ) ) || ( $F{value}.startsWith( "702" ) ) || ( $F{value}.startsWith( "703" ) ) || ( $F{value}.startsWith( "704" ) ) || ( $F{value}.startsWith( "705" ) ) || ( $F{value}.startsWith( "706" ) ) || ( $F{value}.startsWith( "708" ) ) || ( $F{value}.startsWith( "709" ) ) ) )
+?
+( $V{AMT_1_BEFORE}.add( $F{amount} ) )
+:
+( $V{AMT_1_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="AMT_2_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{before}.intValue() == 1 ) && ( ( $F{value}.startsWith( "6980" ) ) || ( $F{value}.startsWith( "71" ) ) || ( $F{value}.startsWith( "7930" ) ) ) )
+?
+( $V{AMT_2_BEFORE}.add( $F{amount} ) )
+:
+( $V{AMT_2_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="AMT_3_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{before}.intValue() == 1 ) && ( $F{value}.startsWith( "73" ) ) )
+?
+( $V{AMT_3_BEFORE}.add( $F{amount} ) )
+:
+( $V{AMT_3_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="AMT_4_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{before}.intValue() == 1 ) && ( ( $F{value}.startsWith( "600" ) ) || ( $F{value}.startsWith( "601" ) ) || ( $F{value}.startsWith( "602" ) ) || ( $F{value}.startsWith( "606" ) ) || ( $F{value}.startsWith( "607" ) ) || ( $F{value}.startsWith( "608" ) ) || ( $F{value}.startsWith( "609" ) ) || ( $F{value}.startsWith( "61" ) ) || ( $F{value}.startsWith( "6931" ) ) || ( $F{value}.startsWith( "6932" ) ) || ( $F{value}.startsWith( "6933" ) ) || ( $F{value}.startsWith( "7931" ) ) || ( $F{value}.startsWith( "7932" ) ) || ( $F{value}.startsWith( "7933" ) ) ) )
+?
+( $V{AMT_4_BEFORE}.add( $F{amount} ) )
+:
+( $V{AMT_4_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="AMT_5_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{before}.intValue() == 1 ) && ( ( $F{value}.startsWith( "740" ) ) || ( $F{value}.startsWith( "747" ) ) || ( $F{value}.startsWith( "75" ) ) || ( $F{value}.startsWith( "778" ) ) ) )
+?
+( $V{AMT_5_BEFORE}.add( $F{amount} ) )
+:
+( $V{AMT_5_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="AMT_6_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{before}.intValue() == 1 ) && ( $F{value}.startsWith( "64" ) ) )
+?
+( $V{AMT_6_BEFORE}.add( $F{amount} ) )
+:
+( $V{AMT_6_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="AMT_7_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{before}.intValue() == 1 ) && ( ( $F{value}.startsWith( "62" ) ) || ( $F{value}.startsWith( "631" ) ) || ( $F{value}.startsWith( "634" ) ) || ( $F{value}.startsWith( "636" ) ) || ( $F{value}.startsWith( "639" ) ) || ( $F{value}.startsWith( "65" ) ) || ( $F{value}.startsWith( "678" ) ) || ( $F{value}.startsWith( "694" ) ) || ( $F{value}.startsWith( "695" ) ) || ( $F{value}.startsWith( "794" ) ) || ( $F{value}.startsWith( "7954" ) ) ) )
+?
+( $V{AMT_7_BEFORE}.add( $F{amount} ) )
+:
+( $V{AMT_7_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="AMT_8_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{before}.intValue() == 1 ) && ( $F{value}.startsWith( "68" ) ) )
+?
+( $V{AMT_8_BEFORE}.add( $F{amount} ) )
+:
+( $V{AMT_8_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="AMT_9_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{before}.intValue() == 1 ) && ( $F{value}.startsWith( "746" ) ) )
+?
+( $V{AMT_9_BEFORE}.add( $F{amount} ) )
+:
+( $V{AMT_9_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="AMT_10_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{before}.intValue() == 1 ) && ( ( $F{value}.startsWith( "7951" ) ) || ( $F{value}.startsWith( "7952" ) ) || ( $F{value}.startsWith( "7955" ) ) ) )
+?
+( $V{AMT_10_BEFORE}.add( $F{amount} ) )
+:
+( $V{AMT_10_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="AMT_11_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{before}.intValue() == 1 ) && ( ( $F{value}.startsWith( "670" ) ) || ( $F{value}.startsWith( "671" ) ) || ( $F{value}.startsWith( "672" ) ) || ( $F{value}.startsWith( "690" ) ) || ( $F{value}.startsWith( "691" ) ) || ( $F{value}.startsWith( "692" ) ) || ( $F{value}.startsWith( "770" ) ) || ( $F{value}.startsWith( "771" ) ) || ( $F{value}.startsWith( "772" ) ) || ( $F{value}.startsWith( "790" ) ) || ( $F{value}.startsWith( "791" ) ) || ( $F{value}.startsWith( "792" ) ) ) )
+?
+( $V{AMT_11_BEFORE}.add( $F{amount} ) )
+:
+( $V{AMT_11_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="AMT_A_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{AMT_1_BEFORE}.add( $V{AMT_2_BEFORE} ).add( $V{AMT_3_BEFORE} ).add( $V{AMT_4_BEFORE} ).add( $V{AMT_5_BEFORE}).add( $V{AMT_6_BEFORE} ).add( $V{AMT_7_BEFORE} ).add( $V{AMT_8_BEFORE} ).add( $V{AMT_9_BEFORE} ).add( $V{AMT_10_BEFORE} ).add( $V{AMT_11_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="AMT_12_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{before}.intValue() == 1 ) && ( ( $F{value}.startsWith( "760" ) ) || ( $F{value}.startsWith( "761" ) ) || ( $F{value}.startsWith( "762" ) ) || ( $F{value}.startsWith( "769" ) ) ) )
+?
+( $V{AMT_12_BEFORE}.add( $F{amount} ) )
+:
+( $V{AMT_12_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="AMT_13_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{before}.intValue() == 1 ) && ( ( $F{value}.startsWith( "660" ) ) || ( $F{value}.startsWith( "661" ) ) || ( $F{value}.startsWith( "662" ) ) || ( $F{value}.startsWith( "664" ) ) || ( $F{value}.startsWith( "665" ) ) || ( $F{value}.startsWith( "669" ) ) ) )
+?
+( $V{AMT_13_BEFORE}.add( $F{amount} ) )
+:
+( $V{AMT_13_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="AMT_14_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{before}.intValue() == 1 ) && ( ( $F{value}.startsWith( "663" ) ) || ( $F{value}.startsWith( "763" ) ) ) )
+?
+( $V{AMT_14_BEFORE}.add( $F{amount} ) )
+:
+( $V{AMT_14_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="AMT_15_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{before}.intValue() == 1 ) && ( ( $F{value}.startsWith( "668" ) ) || ( $F{value}.startsWith( "768" ) ) ) )
+?
+( $V{AMT_15_BEFORE}.add( $F{amount} ) )
+:
+( $V{AMT_15_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="AMT_16_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{before}.intValue() == 1 ) && ( ( $F{value}.startsWith( "666" ) ) || ( $F{value}.startsWith( "667" ) ) || ( $F{value}.startsWith( "673" ) ) || ( $F{value}.startsWith( "675" ) ) || ( $F{value}.startsWith( "696" ) ) || ( $F{value}.startsWith( "697" ) ) || ( $F{value}.startsWith( "698" ) ) || ( $F{value}.startsWith( "699" ) ) || ( $F{value}.startsWith( "766" ) ) || ( $F{value}.startsWith( "773" ) ) || ( $F{value}.startsWith( "775" ) ) || ( $F{value}.startsWith( "796" ) ) || ( $F{value}.startsWith( "797" ) ) || ( $F{value}.startsWith( "798" ) ) || ( $F{value}.startsWith( "799" ) ) ) )
+?
+( $V{AMT_16_BEFORE}.add( $F{amount} ) )
+:
+( $V{AMT_16_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="AMT_B_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{AMT_12_BEFORE}.add( $V{AMT_13_BEFORE} ).add( $V{AMT_14_BEFORE} ).add( $V{AMT_15_BEFORE} ).add( $V{AMT_16_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="AMT_C_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{AMT_A_BEFORE}.add( $V{AMT_B_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="AMT_17_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{before}.intValue() == 1 ) && ( ( $F{value}.startsWith( "6300" ) ) || ( $F{value}.startsWith( "6301" ) ) || ( $F{value}.startsWith( "633" ) ) || ( $F{value}.startsWith( "638" ) ) ) )
+?
+( $V{AMT_17_BEFORE}.add( $F{amount} ) )
+:
+( $V{AMT_17_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="AMT_D_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{AMT_C_BEFORE}.add( $V{AMT_17_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<background>
+		<band/>
+	</background>
+	<title>
+		<band/>
+	</title>
+	<pageHeader>
+		<band/>
+	</pageHeader>
+	<columnHeader>
+		<band height="48">
+			<staticText>
+				<reportElement key="staticText-24" x="0" y="28" width="395" height="16"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[(Debe) Haber]]></text>
+			</staticText>
+			<line>
+				<reportElement key="line-1" x="0" y="45" width="535" height="1"/>
+			</line>
+			<textField pattern="yyyy" isBlankWhenNull="false">
+				<reportElement key="textField-42" x="400" y="28" width="65" height="16"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="10" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<textFieldExpression class="java.sql.Timestamp"><![CDATA[$P{DateAcct2}]]></textFieldExpression>
+			</textField>
+			<textField pattern="" isBlankWhenNull="false">
+				<reportElement key="textField-43" x="470" y="28" width="65" height="16"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="10" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<textFieldExpression class="java.lang.Integer"><![CDATA[new Integer( $P{DateAcct1}.getYear() + 1899 )]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-25" x="0" y="4" width="265" height="20"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement verticalAlignment="Middle">
+					<font size="12" isBold="true" isItalic="false" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[Cuenta de Pérdidas y Ganancias]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement key="textField-44" x="270" y="4" width="265" height="20"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="12" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{organization}]]></textFieldExpression>
+			</textField>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="14">
+			<printWhenExpression><![CDATA[//( 1 == 2)
+( $F{value}.startsWith( "73" ) )
+?
+( Boolean.TRUE )
+:
+( Boolean.FALSE )]]></printWhenExpression>
+			<textField isBlankWhenNull="false">
+				<reportElement key="textField" x="110" y="0" width="285" height="14"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{value}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField" x="400" y="0" width="65" height="14"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{amount}]]></textFieldExpression>
+			</textField>
+			<textField pattern="" isBlankWhenNull="false">
+				<reportElement key="textField" x="0" y="0" width="50" height="14"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{account3}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="false">
+				<reportElement key="textField" x="55" y="0" width="50" height="14"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{account4}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField" x="470" y="0" width="65" height="14"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression class="java.lang.Integer"><![CDATA[$F{before}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band/>
+	</columnFooter>
+	<pageFooter>
+		<band/>
+	</pageFooter>
+	<summary>
+		<band height="426">
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField" x="400" y="0" width="65" height="16"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{AMT_1}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-1" x="0" y="0" width="395" height="16"/>
+				<textElement verticalAlignment="Middle">
+					<font size="9" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[1. Importe neto de la cifra de negocios.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-1" x="400" y="18" width="65" height="16"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{AMT_2}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-2" x="0" y="18" width="395" height="16"/>
+				<textElement verticalAlignment="Middle">
+					<font size="9" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[2. Variación de existencias de productos terminados y en curso de fabricación.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-2" x="400" y="36" width="65" height="16"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{AMT_3}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-3" x="0" y="36" width="395" height="16"/>
+				<textElement verticalAlignment="Middle">
+					<font size="9" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[3. Trabajos realizados por la empresa para su activo.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-3" x="400" y="54" width="65" height="16"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{AMT_4}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-4" x="0" y="54" width="395" height="16"/>
+				<textElement verticalAlignment="Middle">
+					<font size="9" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[4. Aprovisionamientos]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-4" x="400" y="72" width="65" height="16"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{AMT_5}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-5" x="0" y="72" width="395" height="16"/>
+				<textElement verticalAlignment="Middle">
+					<font size="9" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[5. Otros ingresos de explotación.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-5" x="400" y="90" width="65" height="16"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{AMT_6}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-6" x="0" y="90" width="395" height="16"/>
+				<textElement verticalAlignment="Middle">
+					<font size="9" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[6. Gastos de personal.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-6" x="400" y="108" width="65" height="16"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{AMT_7}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-7" x="0" y="108" width="395" height="16"/>
+				<textElement verticalAlignment="Middle">
+					<font size="9" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[7. Otros gastos de explotación.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-7" x="400" y="126" width="65" height="16"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{AMT_8}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-8" x="0" y="126" width="395" height="16"/>
+				<textElement verticalAlignment="Middle">
+					<font size="9" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[8. Amortización del inmovilizado.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-8" x="400" y="144" width="65" height="16"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{AMT_9}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-9" x="0" y="144" width="395" height="16"/>
+				<textElement verticalAlignment="Middle">
+					<font size="9" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[9. Imputación de subvenciones de inmovilizado no financiero y otras.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-9" x="400" y="162" width="65" height="16"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{AMT_10}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-10" x="0" y="162" width="395" height="16"/>
+				<textElement verticalAlignment="Middle">
+					<font size="9" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[10. Excesos de provisiones.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-10" x="400" y="180" width="65" height="16"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{AMT_11}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-11" x="0" y="180" width="395" height="16"/>
+				<textElement verticalAlignment="Middle">
+					<font size="9" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[11. Deterioro y resultado por enajenaciones del inmovilizado.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-11" mode="Opaque" x="395" y="208" width="70" height="16" backcolor="#CCCCCC"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{AMT_A}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-12" mode="Opaque" x="0" y="208" width="395" height="16" backcolor="#CCCCCC"/>
+				<textElement verticalAlignment="Middle">
+					<font size="9" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[A) RESULTADO DE EXPLOTACIÓN (1+2+3+4+5+6+7+8+9+10+11)]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-12" x="400" y="236" width="65" height="16"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{AMT_12}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-13" x="0" y="236" width="395" height="16"/>
+				<textElement verticalAlignment="Middle">
+					<font size="9" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[12. Ingresos financieros.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-13" x="400" y="254" width="65" height="16"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{AMT_13}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-14" x="0" y="254" width="395" height="16"/>
+				<textElement verticalAlignment="Middle">
+					<font size="9" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[13. Gastos financieros.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-14" x="400" y="272" width="65" height="16"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{AMT_14}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-15" x="0" y="272" width="395" height="16"/>
+				<textElement verticalAlignment="Middle">
+					<font size="9" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[14. Variación de valor razonable en instrumentos financieros.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-15" x="400" y="290" width="65" height="16"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{AMT_15}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-16" x="0" y="290" width="395" height="16"/>
+				<textElement verticalAlignment="Middle">
+					<font size="9" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[15. Diferencias de cambio.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-16" x="400" y="308" width="65" height="16"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{AMT_16}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-17" x="0" y="308" width="395" height="16"/>
+				<textElement verticalAlignment="Middle">
+					<font size="9" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[16. Deterioro y resultado por enajenaciones de instrumentos financieros.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-17" mode="Opaque" x="395" y="336" width="70" height="16" backcolor="#CCCCCC"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{AMT_B}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-18" mode="Opaque" x="0" y="336" width="395" height="16" backcolor="#CCCCCC"/>
+				<textElement verticalAlignment="Middle">
+					<font size="9" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[B) RESULTADO FINANCIERO (12+13+14+15+16)]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-18" mode="Opaque" x="395" y="354" width="70" height="16" backcolor="#CCCCCC"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{AMT_C}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-19" mode="Opaque" x="0" y="354" width="395" height="16" backcolor="#CCCCCC"/>
+				<textElement verticalAlignment="Middle">
+					<font size="9" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[C) RESULTADOS ANTES DE IMPUESTOS (A+B)]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-19" x="400" y="382" width="65" height="16"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{AMT_17}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-20" x="0" y="382" width="395" height="16"/>
+				<textElement verticalAlignment="Middle">
+					<font size="9" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[17. Impuestos sobre beneficios.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-20" mode="Opaque" x="395" y="410" width="70" height="16" backcolor="#CCCCCC"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{AMT_D}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-21" mode="Opaque" x="0" y="410" width="395" height="16" backcolor="#CCCCCC"/>
+				<textElement verticalAlignment="Middle">
+					<font size="9" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[D) RESULTADO DEL EJERCICIO (C+17)]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-21" x="470" y="0" width="65" height="16"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{AMT_1_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-22" x="470" y="18" width="65" height="16"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{AMT_2_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-23" x="470" y="36" width="65" height="16"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{AMT_3_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-24" x="470" y="54" width="65" height="16"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{AMT_4_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-25" x="470" y="72" width="65" height="16"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{AMT_5_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-26" x="470" y="90" width="65" height="16"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{AMT_6_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-27" x="470" y="108" width="65" height="16"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{AMT_7_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-28" x="470" y="126" width="65" height="16"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{AMT_8_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-29" x="470" y="144" width="65" height="16"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{AMT_9_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-30" x="470" y="162" width="65" height="16"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{AMT_10_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-31" x="470" y="180" width="65" height="16"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{AMT_11_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-32" mode="Opaque" x="465" y="208" width="70" height="16" backcolor="#CCCCCC"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{AMT_A_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-33" x="470" y="236" width="65" height="16"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{AMT_12_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-34" x="470" y="254" width="65" height="16"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{AMT_13_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-35" x="470" y="272" width="65" height="16"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{AMT_14_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-36" x="470" y="290" width="65" height="16"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{AMT_15_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-37" x="470" y="308" width="65" height="16"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{AMT_16_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-38" mode="Opaque" x="465" y="336" width="70" height="16" backcolor="#CCCCCC"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{AMT_B_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-39" mode="Opaque" x="465" y="354" width="70" height="16" backcolor="#CCCCCC"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{AMT_C_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-40" x="470" y="382" width="65" height="16"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{AMT_17_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-41" mode="Opaque" x="465" y="410" width="70" height="16" backcolor="#CCCCCC"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{AMT_D_BEFORE}]]></textFieldExpression>
+			</textField>
+		</band>
+	</summary>
+</jasperReport>
