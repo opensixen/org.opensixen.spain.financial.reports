@@ -1,0 +1,2198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="BalanceSituacion" pageWidth="595" pageHeight="842" columnWidth="535" leftMargin="30" rightMargin="30" topMargin="20" bottomMargin="20">
+	<property name="ireport.scriptlethandling" value="0"/>
+	<property name="ireport.encoding" value="UTF-8"/>
+	<property name="ireport.zoom" value="1.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="30"/>
+	<import value="net.sf.jasperreports.engine.*"/>
+	<import value="java.util.*"/>
+	<import value="net.sf.jasperreports.engine.data.*"/>
+	<parameter name="DateAcct1" class="java.util.Date"/>
+	<parameter name="DateAcct2" class="java.util.Date"/>
+	<parameter name="AD_Org_ID" class="java.math.BigDecimal">
+		<defaultValueExpression><![CDATA[new BigDecimal(0.00)]]></defaultValueExpression>
+	</parameter>
+	<parameter name="AD_Client_ID" class="java.math.BigDecimal" isForPrompting="false">
+		<defaultValueExpression><![CDATA[new BigDecimal(0.00)]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Before" class="java.lang.String">
+		<defaultValueExpression><![CDATA["Y"]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT		(SELECT name FROM adempiere.ad_org WHERE ad_org_id = $P{AD_Org_ID}) AS organization
+		, a.value
+		, CASE WHEN a.credit IS NULL THEN 0 ELSE a.credit END AS credit_after
+		, CASE WHEN a.debit IS NULL THEN 0 ELSE a.debit END AS debit_after
+		, CASE WHEN b.credit IS NULL THEN 0 ELSE b.credit END AS credit_before
+		, CASE WHEN b.debit IS NULL THEN 0 ELSE b.debit END AS debit_before
+FROM
+		(
+		SELECT		eva.ad_org_id
+				, eva.c_elementvalue_id
+				, eva.value
+				, SUM(fac.amtacctcr) AS credit
+				, SUM(fac.amtacctdr) AS debit
+		FROM 		adempiere.c_elementvalue eva
+		JOIN		adempiere.fact_acct fac		ON fac.account_id = eva.c_elementvalue_id
+		JOIN		adempiere.ad_table tab		ON tab.ad_table_id = fac.ad_table_id
+		WHERE		fac.dateacct BETWEEN $P{DateAcct1} AND $P{DateAcct2}
+		AND		(
+					fac.ad_org_id IN
+					(
+						SELECT 	tn.node_id
+						FROM	adempiere.ad_treenode tn
+						JOIN	adempiere.ad_tree t ON tn.ad_tree_id = t.ad_tree_id
+						WHERE 	t.treetype = 'OO'
+						AND	tn.parent_id = $P{AD_Org_ID}
+					)
+					OR fac.ad_org_id = $P{AD_Org_ID}
+					OR $P{AD_Org_ID} = 0
+				)
+		GROUP BY	eva.ad_org_id, eva.c_elementvalue_id, eva.value
+		) AS a
+LEFT JOIN
+		(
+		SELECT		eva.ad_org_id
+				, eva.c_elementvalue_id
+				, eva.value
+				, SUM(fac.amtacctcr) AS credit
+				, SUM(fac.amtacctdr) AS debit
+		FROM 		adempiere.c_elementvalue eva
+		JOIN		adempiere.fact_acct fac		ON fac.account_id = eva.c_elementvalue_id
+		JOIN		adempiere.ad_table tab		ON tab.ad_table_id = fac.ad_table_id
+		WHERE		fac.dateacct BETWEEN (SELECT date($P{DateAcct1}) - interval '1 year' AS newdate1) AND (SELECT date($P{DateAcct2}) - interval '1 year' AS newdate2)
+		AND		(
+					fac.ad_org_id IN
+					(
+						SELECT 	tn.node_id
+						FROM	adempiere.ad_treenode tn
+						JOIN	adempiere.ad_tree t ON tn.ad_tree_id = t.ad_tree_id
+						WHERE 	t.treetype = 'OO'
+						AND	tn.parent_id = $P{AD_Org_ID}
+					)
+					OR fac.ad_org_id = $P{AD_Org_ID}
+					OR $P{AD_Org_ID} = 0
+				)
+		GROUP BY	eva.ad_org_id, eva.c_elementvalue_id, eva.value
+		) AS b
+ON 		a.c_elementvalue_id = b.c_elementvalue_id
+ORDER BY	a.value ASC]]>
+	</queryString>
+	<field name="organization" class="java.lang.String"/>
+	<field name="value" class="java.lang.String"/>
+	<field name="credit_after" class="java.math.BigDecimal"/>
+	<field name="debit_after" class="java.math.BigDecimal"/>
+	<field name="credit_before" class="java.math.BigDecimal"/>
+	<field name="debit_before" class="java.math.BigDecimal"/>
+	<variable name="A_A_1" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "20" ) ) || ( $F{value}.startsWith( "280" ) ) || ( $F{value}.startsWith( "290" ) ) )
+?
+( $V{A_A_1}.add( $F{debit_after} ).subtract( $F{credit_after} ) )
+:
+( $V{A_A_1} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="A_A_2" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "21" ) ) || ( $F{value}.startsWith( "281" ) ) || ( $F{value}.startsWith( "291" ) )  || ( $F{value}.startsWith( "23" ) ) )
+?
+( $V{A_A_2}.add( $F{debit_after} ).subtract( $F{credit_after} ) )
+:
+( $V{A_A_2} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="A_A_3" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "22" ) ) || ( $F{value}.startsWith( "282" ) ) || ( $F{value}.startsWith( "292" ) ) )
+?
+( $V{A_A_3}.add( $F{debit_after} ).subtract( $F{credit_after} ) )
+:
+( $V{A_A_3} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="A_A_4" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "2403" ) ) || ( $F{value}.startsWith( "2404" ) ) || ( $F{value}.startsWith( "2413" ) ) || ( $F{value}.startsWith( "2414" ) )  || ( $F{value}.startsWith( "2423" ) )  || ( $F{value}.startsWith( "2424" ) )  || ( $F{value}.startsWith( "2493" ) )  || ( $F{value}.startsWith( "2494" ) ) || ( $F{value}.startsWith( "2933" ) ) || ( $F{value}.startsWith( "2934" ) ) || ( $F{value}.startsWith( "2943" ) ) || ( $F{value}.startsWith( "2944" ) ) || ( $F{value}.startsWith( "2953" ) ) || ( $F{value}.startsWith( "2954" ) ) )
+?
+( $V{A_A_4}.add( $F{debit_after} ).subtract( $F{credit_after} ) )
+:
+( $V{A_A_4} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="A_A_5" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "2405" ) ) || ( $F{value}.startsWith( "2415" ) ) || ( $F{value}.startsWith( "2425" ) ) || ( $F{value}.startsWith( "2495" ) ) || ( $F{value}.startsWith( "250" ) ) || ( $F{value}.startsWith( "251" ) ) || ( $F{value}.startsWith( "252" ) ) || ( $F{value}.startsWith( "253" ) ) || ( $F{value}.startsWith( "254" ) ) || ( $F{value}.startsWith( "255" ) ) || ( $F{value}.startsWith( "258" ) ) || ( $F{value}.startsWith( "259" ) ) || ( $F{value}.startsWith( "26" ) ) || ( $F{value}.startsWith( "2935" ) ) || ( $F{value}.startsWith( "2945" ) ) || ( $F{value}.startsWith( "2955" ) ) || ( $F{value}.startsWith( "296" ) ) || ( $F{value}.startsWith( "297" ) ) || ( $F{value}.startsWith( "298" ) ) )
+?
+( $V{A_A_5}.add( $F{debit_after} ).subtract( $F{credit_after} ) )
+:
+( $V{A_A_5} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="A_A_6" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( $F{value}.startsWith( "474" ) )
+?
+( $V{A_A_6}.add( $F{debit_after} ).subtract( $F{credit_after} ) )
+:
+( $V{A_A_6} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="A_A" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{A_A_1}.add( $V{A_A_2} ).add( $V{A_A_3} ).add( $V{A_A_4} ).add( $V{A_A_5}).add( $V{A_A_6} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="A_B_1" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "30" ) ) || ( $F{value}.startsWith( "31" ) ) || ( $F{value}.startsWith( "32" ) ) || ( $F{value}.startsWith( "33" ) ) || ( $F{value}.startsWith( "34" ) ) || ( $F{value}.startsWith( "35" ) ) || ( $F{value}.startsWith( "36" ) ) || ( $F{value}.startsWith( "39" ) ) || ( $F{value}.startsWith( "407" ) ) )
+?
+( $V{A_B_1}.add( $F{debit_after} ).subtract( $F{credit_after} ) )
+:
+( $V{A_B_1} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="A_B_2" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{A_B_2_1}.add( $V{A_B_2_2} ).add( $V{A_B_2_3} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="A_B_2_1" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "430" ) ) || ( $F{value}.startsWith( "431" ) ) || ( $F{value}.startsWith( "432" ) ) || ( $F{value}.startsWith( "433" ) ) || ( $F{value}.startsWith( "434" ) ) || ( $F{value}.startsWith( "435" ) ) || ( $F{value}.startsWith( "436" ) ) || ( $F{value}.startsWith( "437" ) ) || ( $F{value}.startsWith( "490" ) ) || ( $F{value}.startsWith( "493" ) ) )
+?
+( $V{A_B_2_1}.add( $F{debit_after} ).subtract( $F{credit_after} ) )
+:
+( $V{A_B_2_1} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="A_B_2_2" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( $F{value}.startsWith( "5580" ) )
+?
+( $V{A_B_2_2}.add( $F{debit_after} ).subtract( $F{credit_after} ) )
+:
+( $V{A_B_2_2} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="A_B_2_3" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "44" ) ) || ( $F{value}.startsWith( "460" ) ) || ( $F{value}.startsWith( "470" ) ) || ( $F{value}.startsWith( "471" ) ) || ( $F{value}.startsWith( "472" ) ) || ( $F{value}.startsWith( "473" ) ) || ( $F{value}.startsWith( "544" ) ) )
+?
+( $V{A_B_2_3}.add( $F{debit_after} ).subtract( $F{credit_after} ) )
+:
+( $V{A_B_2_3} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="A_B_3" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "5303" ) ) || ( $F{value}.startsWith( "5304" ) ) || ( $F{value}.startsWith( "5313" ) ) || ( $F{value}.startsWith( "5314" ) ) || ( $F{value}.startsWith( "5323" ) ) || ( $F{value}.startsWith( "5324" ) ) || ( $F{value}.startsWith( "5333" ) ) || ( $F{value}.startsWith( "5334" ) ) || ( $F{value}.startsWith( "5343" ) ) || ( $F{value}.startsWith( "5344" ) ) || ( $F{value}.startsWith( "5353" ) ) || ( $F{value}.startsWith( "5354" ) ) || ( $F{value}.startsWith( "5393" ) ) || ( $F{value}.startsWith( "5394" ) ) || ( $F{value}.startsWith( "5523" ) ) || ( $F{value}.startsWith( "5524" ) ) || ( $F{value}.startsWith( "5933" ) ) || ( $F{value}.startsWith( "5934" ) ) || ( $F{value}.startsWith( "5943" ) ) || ( $F{value}.startsWith( "5944" ) ) || ( $F{value}.startsWith( "5953" ) ) || ( $F{value}.startsWith( "5954" ) ) )
+?
+( $V{A_B_3}.add( $F{debit_after} ).subtract( $F{credit_after} ) )
+:
+( $V{A_B_3} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="A_B_4" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "5305" ) ) || ( $F{value}.startsWith( "5315" ) ) || ( $F{value}.startsWith( "5325" ) ) || ( $F{value}.startsWith( "5335" ) ) || ( $F{value}.startsWith( "5345" ) ) || ( $F{value}.startsWith( "5355" ) ) || ( $F{value}.startsWith( "5395" ) ) || ( $F{value}.startsWith( "540" ) ) || ( $F{value}.startsWith( "541" ) ) || ( $F{value}.startsWith( "542" ) ) || ( $F{value}.startsWith( "543" ) ) || ( $F{value}.startsWith( "545" ) ) || ( $F{value}.startsWith( "546" ) ) || ( $F{value}.startsWith( "547" ) ) || ( $F{value}.startsWith( "548" ) ) || ( $F{value}.startsWith( "549" ) ) || ( $F{value}.startsWith( "551" ) ) || ( $F{value}.startsWith( "5525" ) ) || ( $F{value}.startsWith( "5590" ) ) || ( $F{value}.startsWith( "565" ) ) || ( $F{value}.startsWith( "566" ) ) || ( $F{value}.startsWith( "5935" ) ) || ( $F{value}.startsWith( "5945" ) )|| ( $F{value}.startsWith( "5955" ) ) || ( $F{value}.startsWith( "596" ) ) || ( $F{value}.startsWith( "597" ) ) || ( $F{value}.startsWith( "598" ) ) )
+?
+( $V{A_B_4}.add( $F{debit_after} ).subtract( $F{credit_after} ) )
+:
+( $V{A_B_4} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="A_B_5" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "480" ) ) || ( $F{value}.startsWith( "567" ) ) )
+?
+( $V{A_B_5}.add( $F{debit_after} ).subtract( $F{credit_after} ) )
+:
+( $V{A_B_5} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="A_B_6" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( $F{value}.startsWith( "57" ) )
+?
+( $V{A_B_6}.add( $F{debit_after} ).subtract( $F{credit_after} ) )
+:
+( $V{A_B_6} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="A_B" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{A_B_1}.add( $V{A_B_2} ).add( $V{A_B_3} ).add( $V{A_B_4} ).add( $V{A_B_5}).add( $V{A_B_6} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="A_TOTAL" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{A_A}.add( $V{A_B} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_A_1" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{P_A_1_1}.add( $V{P_A_1_2} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_A_1_1" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "100" ) ) || ( $F{value}.startsWith( "101" ) ) || ( $F{value}.startsWith( "102" ) ) )
+?
+( $V{P_A_1_1}.add( $F{credit_after} ).subtract( $F{debit_after} ) )
+:
+( $V{P_A_1_1} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_A_1_2" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "1030" ) ) || ( $F{value}.startsWith( "1040" ) ) )
+?
+( $V{P_A_1_2}.add( $F{credit_after} ).subtract( $F{debit_after} ) )
+:
+( $V{P_A_1_2} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_A_2" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( $F{value}.startsWith( "110" ) )
+?
+( $V{P_A_2}.add( $F{credit_after} ).subtract( $F{debit_after} ) )
+:
+( $V{P_A_2} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_A_3" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "112" ) ) || ( $F{value}.startsWith( "113" ) ) || ( $F{value}.startsWith( "114" ) ) || ( $F{value}.startsWith( "119" ) ) )
+?
+( $V{P_A_3}.add( $F{credit_after} ).subtract( $F{debit_after} ) )
+:
+( $V{P_A_3} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_A_4" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "108" ) ) || ( $F{value}.startsWith( "109" ) ) )
+?
+( $V{P_A_4}.add( $F{credit_after} ).subtract( $F{debit_after} ) )
+:
+( $V{P_A_4} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_A_5" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "120" ) ) || ( $F{value}.startsWith( "121" ) ) )
+?
+( $V{P_A_5}.add( $F{credit_after} ).subtract( $F{debit_after} ) )
+:
+( $V{P_A_5} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_A_6" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( $F{value}.startsWith( "118" ) )
+?
+( $V{P_A_6}.add( $F{credit_after} ).subtract( $F{debit_after} ) )
+:
+( $V{P_A_6} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_A_7" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "129" ) ) || ( $F{value}.startsWith( "6" ) ) || ( $F{value}.startsWith( "7" ) ) )
+?
+( $V{P_A_7}.add( $F{credit_after} ).subtract( $F{debit_after} ) )
+:
+( $V{P_A_7} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_A_8" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( $F{value}.startsWith( "557" ) )
+?
+( $V{P_A_8}.add( $F{credit_after} ).subtract( $F{debit_after} ) )
+:
+( $V{P_A_8} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_A2" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "130" ) ) || ( $F{value}.startsWith( "131" ) ) || ( $F{value}.startsWith( "132" ) ) )
+?
+( $V{P_A2}.add( $F{credit_after} ).subtract( $F{debit_after} ) )
+:
+( $V{P_A2} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_A1" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{P_A_1}.add( $V{P_A_2} ).add( $V{P_A_3} ).add( $V{P_A_4} ).add( $V{P_A_5} ).add( $V{P_A_6} ).add( $V{P_A_7} ).add( $V{P_A_8} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_A" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{P_A1}.add( $V{P_A2} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_B_1" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( $F{value}.startsWith( "14" ) )
+?
+( $V{P_B_1}.add( $F{credit_after} ).subtract( $F{debit_after} ) )
+:
+( $V{P_B_1} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_B_2" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{P_B_2_1}.add( $V{P_B_2_2} ).add( $V{P_B_2_3} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_B_2_1" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "1605" ) ) || ( $F{value}.startsWith( "170" ) ) )
+?
+( $V{P_B_2_1}.add( $F{credit_after} ).subtract( $F{debit_after} ) )
+:
+( $V{P_B_2_1} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_B_2_2" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "1625" ) ) || ( $F{value}.startsWith( "174" ) ) )
+?
+( $V{P_B_2_2}.add( $F{credit_after} ).subtract( $F{debit_after} ) )
+:
+( $V{P_B_2_2} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_B_2_3" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "1615" ) ) || ( $F{value}.startsWith( "1635" ) ) || ( $F{value}.startsWith( "171" ) ) || ( $F{value}.startsWith( "172" ) ) || ( $F{value}.startsWith( "173" ) ) || ( $F{value}.startsWith( "175" ) ) || ( $F{value}.startsWith( "176" ) ) || ( $F{value}.startsWith( "177" ) ) || ( $F{value}.startsWith( "179" ) ) || ( $F{value}.startsWith( "180" ) ) || ( $F{value}.startsWith( "185" ) ) )
+?
+( $V{P_B_2_3}.add( $F{credit_after} ).subtract( $F{debit_after} ) )
+:
+( $V{P_B_2_3} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_B_3" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "1603" ) ) || ( $F{value}.startsWith( "1604" ) ) || ( $F{value}.startsWith( "1613" ) ) || ( $F{value}.startsWith( "1614" ) ) || ( $F{value}.startsWith( "1623" ) ) || ( $F{value}.startsWith( "1624" ) ) || ( $F{value}.startsWith( "1633" ) ) || ( $F{value}.startsWith( "1634" ) ) )
+?
+( $V{P_B_3}.add( $F{credit_after} ).subtract( $F{debit_after} ) )
+:
+( $V{P_B_3} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_B_4" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( $F{value}.startsWith( "479" ) )
+?
+( $V{P_B_4}.add( $F{credit_after} ).subtract( $F{debit_after} ) )
+:
+( $V{P_B_4} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_B_5" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( $F{value}.startsWith( "181" ) )
+?
+( $V{P_B_5}.add( $F{credit_after} ).subtract( $F{debit_after} ) )
+:
+( $V{P_B_5} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_B" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{P_B_1}.add( $V{P_B_2} ).add( $V{P_B_3} ).add( $V{P_B_4} ).add( $V{P_B_5} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_C_1" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "499" ) ) || ( $F{value}.startsWith( "529" ) ) )
+?
+( $V{P_C_1}.add( $F{credit_after} ).subtract( $F{debit_after} ) )
+:
+( $V{P_C_1} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_C_2" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{P_C_2_1}.add( $V{P_C_2_2} ).add( $V{P_C_2_3} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_C_2_1" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "5105" ) ) || ( $F{value}.startsWith( "520" ) ) || ( $F{value}.startsWith( "527" ) ) )
+?
+( $V{P_C_2_1}.add( $F{credit_after} ).subtract( $F{debit_after} ) )
+:
+( $V{P_C_2_1} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_C_2_2" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "5125" ) ) || ( $F{value}.startsWith( "524" ) ) )
+?
+( $V{P_C_2_2}.add( $F{credit_after} ).subtract( $F{debit_after} ) )
+:
+( $V{P_C_2_2} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_C_2_3" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "1034" ) ) || ( $F{value}.startsWith( "1044" ) ) || ( $F{value}.startsWith( "190" ) ) || ( $F{value}.startsWith( "192" ) ) || ( $F{value}.startsWith( "194" ) ) || ( $F{value}.startsWith( "500" ) ) || ( $F{value}.startsWith( "505" ) ) || ( $F{value}.startsWith( "509" ) ) || ( $F{value}.startsWith( "5115" ) ) || ( $F{value}.startsWith( "5135" ) ) || ( $F{value}.startsWith( "5145" ) ) || ( $F{value}.startsWith( "521" ) ) || ( $F{value}.startsWith( "522" ) ) || ( $F{value}.startsWith( "523" ) ) || ( $F{value}.startsWith( "525" ) ) || ( $F{value}.startsWith( "526" ) ) || ( $F{value}.startsWith( "528" ) ) || ( $F{value}.startsWith( "555" ) ) || ( $F{value}.startsWith( "5565" ) ) || ( $F{value}.startsWith( "5566" ) ) || ( $F{value}.startsWith( "560" ) ) || ( $F{value}.startsWith( "561" ) ) )
+?
+( $V{P_C_2_3}.add( $F{credit_after} ).subtract( $F{debit_after} ) )
+:
+( $V{P_C_2_3} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_C_3" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "5103" ) ) || ( $F{value}.startsWith( "5104" ) ) || ( $F{value}.startsWith( "5113" ) ) || ( $F{value}.startsWith( "5114" ) ) || ( $F{value}.startsWith( "5123" ) ) || ( $F{value}.startsWith( "5124" ) ) || ( $F{value}.startsWith( "5133" ) ) || ( $F{value}.startsWith( "5134" ) ) || ( $F{value}.startsWith( "5143" ) ) || ( $F{value}.startsWith( "5144" ) ) || ( $F{value}.startsWith( "5563" ) ) || ( $F{value}.startsWith( "5564" ) ) )
+?
+( $V{P_C_3}.add( $F{credit_after} ).subtract( $F{debit_after} ) )
+:
+( $V{P_C_3} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_C_4" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{P_C_4_1}.add( $V{P_C_4_2} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_C_4_1" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "400" ) ) || ( $F{value}.startsWith( "401" ) ) || ( $F{value}.startsWith( "403" ) ) || ( $F{value}.startsWith( "404" ) ) || ( $F{value}.startsWith( "405" ) ) || ( $F{value}.startsWith( "406" ) ) )
+?
+( $V{P_C_4_1}.add( $F{credit_after} ).subtract( $F{debit_after} ) )
+:
+( $V{P_C_4_1} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_C_4_2" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "41" ) ) || ( $F{value}.startsWith( "438" ) ) || ( $F{value}.startsWith( "465" ) ) || ( $F{value}.startsWith( "475" ) ) || ( $F{value}.startsWith( "476" ) ) || ( $F{value}.startsWith( "477" ) ) )
+?
+( $V{P_C_4_2}.add( $F{credit_after} ).subtract( $F{debit_after} ) )
+:
+( $V{P_C_4_2} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_C_5" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "485" ) ) || ( $F{value}.startsWith( "568" ) ) )
+?
+( $V{P_C_5}.add( $F{credit_after} ).subtract( $F{debit_after} ) )
+:
+( $V{P_C_5} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_C" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{P_C_1}.add( $V{P_C_2_1} ).add( $V{P_C_2_2} ).add( $V{P_C_2_3} ).add( $V{P_C_3} ).add( $V{P_C_4} ).add( $V{P_C_5})]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_TOTAL" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{P_A}.add( $V{P_B} ).add( $V{P_C} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="A_A_1_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "20" ) ) || ( $F{value}.startsWith( "280" ) ) || ( $F{value}.startsWith( "290" ) ) )
+?
+( $V{A_A_1_BEFORE}.add( $F{debit_before} ).subtract( $F{credit_before} ) )
+:
+( $V{A_A_1_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="A_A_2_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "21" ) ) || ( $F{value}.startsWith( "281" ) ) || ( $F{value}.startsWith( "291" ) )  || ( $F{value}.startsWith( "23" ) ) )
+?
+( $V{A_A_2_BEFORE}.add( $F{debit_before} ).subtract( $F{credit_before} ) )
+:
+( $V{A_A_2_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="A_A_3_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "22" ) ) || ( $F{value}.startsWith( "282" ) ) || ( $F{value}.startsWith( "292" ) ) )
+?
+( $V{A_A_3_BEFORE}.add( $F{debit_before} ).subtract( $F{credit_before} ) )
+:
+( $V{A_A_3_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="A_A_4_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "2403" ) ) || ( $F{value}.startsWith( "2404" ) ) || ( $F{value}.startsWith( "2413" ) ) || ( $F{value}.startsWith( "2414" ) )  || ( $F{value}.startsWith( "2423" ) )  || ( $F{value}.startsWith( "2424" ) )  || ( $F{value}.startsWith( "2493" ) )  || ( $F{value}.startsWith( "2494" ) ) || ( $F{value}.startsWith( "2933" ) ) || ( $F{value}.startsWith( "2934" ) ) || ( $F{value}.startsWith( "2943" ) ) || ( $F{value}.startsWith( "2944" ) ) || ( $F{value}.startsWith( "2953" ) ) || ( $F{value}.startsWith( "2954" ) ) )
+?
+( $V{A_A_4_BEFORE}.add( $F{debit_before} ).subtract( $F{credit_before} ) )
+:
+( $V{A_A_4_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="A_A_5_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "2405" ) ) || ( $F{value}.startsWith( "2415" ) ) || ( $F{value}.startsWith( "2425" ) ) || ( $F{value}.startsWith( "2495" ) ) || ( $F{value}.startsWith( "250" ) ) || ( $F{value}.startsWith( "251" ) ) || ( $F{value}.startsWith( "252" ) ) || ( $F{value}.startsWith( "253" ) ) || ( $F{value}.startsWith( "254" ) ) || ( $F{value}.startsWith( "255" ) ) || ( $F{value}.startsWith( "258" ) ) || ( $F{value}.startsWith( "259" ) ) || ( $F{value}.startsWith( "26" ) ) || ( $F{value}.startsWith( "2935" ) ) || ( $F{value}.startsWith( "2945" ) ) || ( $F{value}.startsWith( "2955" ) ) || ( $F{value}.startsWith( "296" ) ) || ( $F{value}.startsWith( "297" ) ) || ( $F{value}.startsWith( "298" ) ) )
+?
+( $V{A_A_5_BEFORE}.add( $F{debit_before} ).subtract( $F{credit_before} ) )
+:
+( $V{A_A_5_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="A_A_6_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( $F{value}.startsWith( "474" ) )
+?
+( $V{A_A_6_BEFORE}.add( $F{debit_before} ).subtract( $F{credit_before} ) )
+:
+( $V{A_A_6_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="A_A_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{A_A_1_BEFORE}.add( $V{A_A_2_BEFORE} ).add( $V{A_A_3_BEFORE} ).add( $V{A_A_4_BEFORE} ).add( $V{A_A_5_BEFORE}).add( $V{A_A_6_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="A_B_1_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "30" ) ) || ( $F{value}.startsWith( "31" ) ) || ( $F{value}.startsWith( "32" ) ) || ( $F{value}.startsWith( "33" ) ) || ( $F{value}.startsWith( "34" ) ) || ( $F{value}.startsWith( "35" ) ) || ( $F{value}.startsWith( "36" ) ) || ( $F{value}.startsWith( "39" ) ) || ( $F{value}.startsWith( "407" ) ) )
+?
+( $V{A_B_1_BEFORE}.add( $F{debit_before} ).subtract( $F{credit_before} ) )
+:
+( $V{A_B_1_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="A_B_2_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{A_B_2_1_BEFORE}.add( $V{A_B_2_2_BEFORE} ).add( $V{A_B_2_3_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="A_B_2_1_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "430" ) ) || ( $F{value}.startsWith( "431" ) ) || ( $F{value}.startsWith( "432" ) ) || ( $F{value}.startsWith( "433" ) ) || ( $F{value}.startsWith( "434" ) ) || ( $F{value}.startsWith( "435" ) ) || ( $F{value}.startsWith( "436" ) ) || ( $F{value}.startsWith( "437" ) ) || ( $F{value}.startsWith( "490" ) ) || ( $F{value}.startsWith( "493" ) ) )
+?
+( $V{A_B_2_1_BEFORE}.add( $F{debit_before} ).subtract( $F{credit_before} ) )
+:
+( $V{A_B_2_1_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="A_B_2_2_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( $F{value}.startsWith( "5580" ) )
+?
+( $V{A_B_2_2_BEFORE}.add( $F{debit_before} ).subtract( $F{credit_before} ) )
+:
+( $V{A_B_2_2_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="A_B_2_3_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "44" ) ) || ( $F{value}.startsWith( "460" ) ) || ( $F{value}.startsWith( "470" ) ) || ( $F{value}.startsWith( "471" ) ) || ( $F{value}.startsWith( "472" ) ) || ( $F{value}.startsWith( "473" ) ) || ( $F{value}.startsWith( "544" ) ) )
+?
+( $V{A_B_2_3_BEFORE}.add( $F{debit_before} ).subtract( $F{credit_before} ) )
+:
+( $V{A_B_2_3_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="A_B_3_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "5303" ) ) || ( $F{value}.startsWith( "5304" ) ) || ( $F{value}.startsWith( "5313" ) ) || ( $F{value}.startsWith( "5314" ) ) || ( $F{value}.startsWith( "5323" ) ) || ( $F{value}.startsWith( "5324" ) ) || ( $F{value}.startsWith( "5333" ) ) || ( $F{value}.startsWith( "5334" ) ) || ( $F{value}.startsWith( "5343" ) ) || ( $F{value}.startsWith( "5344" ) ) || ( $F{value}.startsWith( "5353" ) ) || ( $F{value}.startsWith( "5354" ) ) || ( $F{value}.startsWith( "5393" ) ) || ( $F{value}.startsWith( "5394" ) ) || ( $F{value}.startsWith( "5523" ) ) || ( $F{value}.startsWith( "5524" ) ) || ( $F{value}.startsWith( "5933" ) ) || ( $F{value}.startsWith( "5934" ) ) || ( $F{value}.startsWith( "5943" ) ) || ( $F{value}.startsWith( "5944" ) ) || ( $F{value}.startsWith( "5953" ) ) || ( $F{value}.startsWith( "5954" ) ) )
+?
+( $V{A_B_3_BEFORE}.add( $F{debit_before} ).subtract( $F{credit_before} ) )
+:
+( $V{A_B_3_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="A_B_4_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "5305" ) ) || ( $F{value}.startsWith( "5315" ) ) || ( $F{value}.startsWith( "5325" ) ) || ( $F{value}.startsWith( "5335" ) ) || ( $F{value}.startsWith( "5345" ) ) || ( $F{value}.startsWith( "5355" ) ) || ( $F{value}.startsWith( "5395" ) ) || ( $F{value}.startsWith( "540" ) ) || ( $F{value}.startsWith( "541" ) ) || ( $F{value}.startsWith( "542" ) ) || ( $F{value}.startsWith( "543" ) ) || ( $F{value}.startsWith( "545" ) ) || ( $F{value}.startsWith( "546" ) ) || ( $F{value}.startsWith( "547" ) ) || ( $F{value}.startsWith( "548" ) ) || ( $F{value}.startsWith( "549" ) ) || ( $F{value}.startsWith( "551" ) ) || ( $F{value}.startsWith( "5525" ) ) || ( $F{value}.startsWith( "5590" ) ) || ( $F{value}.startsWith( "565" ) ) || ( $F{value}.startsWith( "566" ) ) || ( $F{value}.startsWith( "5935" ) ) || ( $F{value}.startsWith( "5945" ) ) || ( $F{value}.startsWith( "596" ) ) || ( $F{value}.startsWith( "597" ) ) || ( $F{value}.startsWith( "598" ) ) )
+?
+( $V{A_B_4_BEFORE}.add( $F{debit_before} ).subtract( $F{credit_before} ) )
+:
+( $V{A_B_4_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="A_B_5_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "480" ) ) || ( $F{value}.startsWith( "567" ) ) )
+?
+( $V{A_B_5_BEFORE}.add( $F{debit_before} ).subtract( $F{credit_before} ) )
+:
+( $V{A_B_5_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="A_B_6_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( $F{value}.startsWith( "57" ) )
+?
+( $V{A_B_6_BEFORE}.add( $F{debit_before} ).subtract( $F{credit_before} ) )
+:
+( $V{A_B_6_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="A_B_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{A_B_1_BEFORE}.add( $V{A_B_2_BEFORE} ).add( $V{A_B_3_BEFORE} ).add( $V{A_B_4_BEFORE} ).add( $V{A_B_5_BEFORE}).add( $V{A_B_6_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="A_TOTAL_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{A_A_BEFORE}.add( $V{A_B_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_A_1_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{P_A_1_1_BEFORE}.add( $V{P_A_1_2_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_A_1_1_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "100" ) ) || ( $F{value}.startsWith( "101" ) ) || ( $F{value}.startsWith( "102" ) ) )
+?
+( $V{P_A_1_1_BEFORE}.add( $F{credit_before} ).subtract( $F{debit_before} ) )
+:
+( $V{P_A_1_1_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_A_1_2_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "1030" ) ) || ( $F{value}.startsWith( "1040" ) ) )
+?
+( $V{P_A_1_2_BEFORE}.add( $F{credit_before} ).subtract( $F{debit_before} ) )
+:
+( $V{P_A_1_2_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_A_2_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( $F{value}.startsWith( "110" ) )
+?
+( $V{P_A_2_BEFORE}.add( $F{credit_before} ).subtract( $F{debit_before} ) )
+:
+( $V{P_A_2_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_A_3_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "112" ) ) || ( $F{value}.startsWith( "113" ) ) || ( $F{value}.startsWith( "114" ) ) || ( $F{value}.startsWith( "119" ) ) )
+?
+( $V{P_A_3_BEFORE}.add( $F{credit_before} ).subtract( $F{debit_before} ) )
+:
+( $V{P_A_3_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_A_4_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "108" ) ) || ( $F{value}.startsWith( "109" ) ) )
+?
+( $V{P_A_4_BEFORE}.add( $F{credit_before} ).subtract( $F{debit_before} ) )
+:
+( $V{P_A_4_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_A_5_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "120" ) ) || ( $F{value}.startsWith( "121" ) ) )
+?
+( $V{P_A_5_BEFORE}.add( $F{credit_before} ).subtract( $F{debit_before} ) )
+:
+( $V{P_A_5_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_A_6_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( $F{value}.startsWith( "118" ) )
+?
+( $V{P_A_6_BEFORE}.add( $F{credit_before} ).subtract( $F{debit_before} ) )
+:
+( $V{P_A_6_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_A_7_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "129" ) ) || ( $F{value}.startsWith( "6" ) ) || ( $F{value}.startsWith( "7" ) ) )
+?
+( $V{P_A_7_BEFORE}.add( $F{credit_before} ).subtract( $F{debit_before} ) )
+:
+( $V{P_A_7_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_A_8_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( $F{value}.startsWith( "557" ) )
+?
+( $V{P_A_8_BEFORE}.add( $F{credit_before} ).subtract( $F{debit_before} ) )
+:
+( $V{P_A_8_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_A2_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "130" ) ) || ( $F{value}.startsWith( "131" ) ) || ( $F{value}.startsWith( "132" ) ) )
+?
+( $V{P_A2_BEFORE}.add( $F{credit_before} ).subtract( $F{debit_before} ) )
+:
+( $V{P_A2_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_A1_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{P_A_1_BEFORE}.add( $V{P_A_2_BEFORE} ).add( $V{P_A_3_BEFORE} ).add( $V{P_A_4_BEFORE} ).add( $V{P_A_5_BEFORE} ).add( $V{P_A_6_BEFORE} ).add( $V{P_A_7_BEFORE} ).add( $V{P_A_8_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_A_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{P_A1_BEFORE}.add( $V{P_A2_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_B_1_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( $F{value}.startsWith( "14" ) )
+?
+( $V{P_B_1_BEFORE}.add( $F{credit_before} ).subtract( $F{debit_before} ) )
+:
+( $V{P_B_1_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_B_2_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{P_B_2_1_BEFORE}.add( $V{P_B_2_2_BEFORE} ).add( $V{P_B_2_3_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_B_2_1_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "1605" ) ) || ( $F{value}.startsWith( "170" ) ) )
+?
+( $V{P_B_2_1_BEFORE}.add( $F{credit_before} ).subtract( $F{debit_before} ) )
+:
+( $V{P_B_2_1_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_B_2_2_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "1625" ) ) || ( $F{value}.startsWith( "174" ) ) )
+?
+( $V{P_B_2_2_BEFORE}.add( $F{credit_before} ).subtract( $F{debit_before} ) )
+:
+( $V{P_B_2_2_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_B_2_3_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "1615" ) ) || ( $F{value}.startsWith( "1635" ) ) || ( $F{value}.startsWith( "171" ) ) || ( $F{value}.startsWith( "172" ) ) || ( $F{value}.startsWith( "173" ) ) || ( $F{value}.startsWith( "175" ) ) || ( $F{value}.startsWith( "176" ) ) || ( $F{value}.startsWith( "177" ) ) || ( $F{value}.startsWith( "179" ) ) || ( $F{value}.startsWith( "180" ) ) || ( $F{value}.startsWith( "185" ) ) )
+?
+( $V{P_B_2_3_BEFORE}.add( $F{credit_before} ).subtract( $F{debit_before} ) )
+:
+( $V{P_B_2_3_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_B_3_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "1603" ) ) || ( $F{value}.startsWith( "1604" ) ) || ( $F{value}.startsWith( "1613" ) ) || ( $F{value}.startsWith( "1614" ) ) || ( $F{value}.startsWith( "1623" ) ) || ( $F{value}.startsWith( "1624" ) ) || ( $F{value}.startsWith( "1633" ) ) || ( $F{value}.startsWith( "1634" ) ) )
+?
+( $V{P_B_3_BEFORE}.add( $F{credit_before} ).subtract( $F{debit_before} ) )
+:
+( $V{P_B_3_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_B_4_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( $F{value}.startsWith( "479" ) )
+?
+( $V{P_B_4_BEFORE}.add( $F{credit_before} ).subtract( $F{debit_before} ) )
+:
+( $V{P_B_4_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_B_5_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( $F{value}.startsWith( "181" ) )
+?
+( $V{P_B_5_BEFORE}.add( $F{credit_before} ).subtract( $F{debit_before} ) )
+:
+( $V{P_B_5_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_B_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{P_B_1_BEFORE}.add( $V{P_B_2_BEFORE} ).add( $V{P_B_3_BEFORE} ).add( $V{P_B_4_BEFORE} ).add( $V{P_B_5_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_C_1_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "499" ) ) || ( $F{value}.startsWith( "529" ) ) )
+?
+( $V{P_C_1_BEFORE}.add( $F{credit_before} ).subtract( $F{debit_before} ) )
+:
+( $V{P_C_1_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_C_2_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{P_C_2_1_BEFORE}.add( $V{P_C_2_2_BEFORE} ).add( $V{P_C_2_3_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_C_2_1_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "5105" ) ) || ( $F{value}.startsWith( "520" ) ) || ( $F{value}.startsWith( "527" ) ) )
+?
+( $V{P_C_2_1_BEFORE}.add( $F{credit_before} ).subtract( $F{debit_before} ) )
+:
+( $V{P_C_2_1_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_C_2_2_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "5125" ) ) || ( $F{value}.startsWith( "524" ) ) )
+?
+( $V{P_C_2_2_BEFORE}.add( $F{credit_before} ).subtract( $F{debit_before} ) )
+:
+( $V{P_C_2_2_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_C_2_3_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "1034" ) ) || ( $F{value}.startsWith( "1044" ) ) || ( $F{value}.startsWith( "190" ) ) || ( $F{value}.startsWith( "192" ) ) || ( $F{value}.startsWith( "194" ) ) || ( $F{value}.startsWith( "500" ) ) || ( $F{value}.startsWith( "505" ) ) || ( $F{value}.startsWith( "509" ) ) || ( $F{value}.startsWith( "5115" ) ) || ( $F{value}.startsWith( "5135" ) ) || ( $F{value}.startsWith( "5145" ) ) || ( $F{value}.startsWith( "521" ) ) || ( $F{value}.startsWith( "522" ) ) || ( $F{value}.startsWith( "523" ) ) || ( $F{value}.startsWith( "525" ) ) || ( $F{value}.startsWith( "526" ) ) || ( $F{value}.startsWith( "528" ) ) || ( $F{value}.startsWith( "555" ) ) || ( $F{value}.startsWith( "5565" ) ) || ( $F{value}.startsWith( "5566" ) ) || ( $F{value}.startsWith( "560" ) ) || ( $F{value}.startsWith( "561" ) ) )
+?
+( $V{P_C_2_3_BEFORE}.add( $F{credit_before} ).subtract( $F{debit_before} ) )
+:
+( $V{P_C_2_3_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_C_3_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "5103" ) ) || ( $F{value}.startsWith( "5104" ) ) || ( $F{value}.startsWith( "5113" ) ) || ( $F{value}.startsWith( "5114" ) ) || ( $F{value}.startsWith( "5123" ) ) || ( $F{value}.startsWith( "5124" ) ) || ( $F{value}.startsWith( "5133" ) ) || ( $F{value}.startsWith( "5134" ) ) || ( $F{value}.startsWith( "5143" ) ) || ( $F{value}.startsWith( "5144" ) ) || ( $F{value}.startsWith( "5563" ) ) || ( $F{value}.startsWith( "5564" ) ) )
+?
+( $V{P_C_3_BEFORE}.add( $F{credit_before} ).subtract( $F{debit_before} ) )
+:
+( $V{P_C_3_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_C_4_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{P_C_4_1_BEFORE}.add( $V{P_C_4_2_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_C_4_1_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "400" ) ) || ( $F{value}.startsWith( "401" ) ) || ( $F{value}.startsWith( "403" ) ) || ( $F{value}.startsWith( "404" ) ) || ( $F{value}.startsWith( "405" ) ) || ( $F{value}.startsWith( "406" ) ) )
+?
+( $V{P_C_4_1_BEFORE}.add( $F{credit_before} ).subtract( $F{debit_before} ) )
+:
+( $V{P_C_4_1_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_C_4_2_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "41" ) ) || ( $F{value}.startsWith( "438" ) ) || ( $F{value}.startsWith( "465" ) ) || ( $F{value}.startsWith( "475" ) ) || ( $F{value}.startsWith( "476" ) ) || ( $F{value}.startsWith( "477" ) ) )
+?
+( $V{P_C_4_2_BEFORE}.add( $F{credit_before} ).subtract( $F{debit_before} ) )
+:
+( $V{P_C_4_2_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_C_5_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( ( $F{value}.startsWith( "485" ) ) || ( $F{value}.startsWith( "568" ) ) )
+?
+( $V{P_C_5_BEFORE}.add( $F{credit_before} ).subtract( $F{debit_before} ) )
+:
+( $V{P_C_5_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_C_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{P_C_1_BEFORE}.add( $V{P_C_2_BEFORE} ).add( $V{P_C_3_BEFORE} ).add( $V{P_C_4_BEFORE} ).add( $V{P_C_5_BEFORE})]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<variable name="P_TOTAL_BEFORE" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{P_A_BEFORE}.add( $V{P_B_BEFORE} ).add( $V{P_C_BEFORE} )]]></variableExpression>
+		<initialValueExpression><![CDATA[new BigDecimal( 0 )]]></initialValueExpression>
+	</variable>
+	<background>
+		<band/>
+	</background>
+	<title>
+		<band/>
+	</title>
+	<pageHeader>
+		<band/>
+	</pageHeader>
+	<columnHeader>
+		<band height="40">
+			<staticText>
+				<reportElement key="staticText-42" x="0" y="0" width="265" height="20"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement verticalAlignment="Middle">
+					<font size="12" isBold="true" isItalic="false" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[Balance de situación]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement key="textField" x="270" y="0" width="265" height="20"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="12" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{organization}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-87" mode="Transparent" x="0" y="24" width="35" height="12"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[Desde:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement key="staticText-88" mode="Transparent" x="115" y="24" width="35" height="12"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[Hasta:]]></text>
+			</staticText>
+			<textField pattern="dd/MM/yyyy" isBlankWhenNull="true">
+				<reportElement key="textField-161" x="35" y="24" width="75" height="12"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="false" pdfFontName="Helvetica"/>
+				</textElement>
+				<textFieldExpression class="java.util.Date"><![CDATA[$P{DateAcct1}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd/MM/yyyy" isBlankWhenNull="true">
+				<reportElement key="textField-162" x="150" y="24" width="75" height="12"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isBold="false" pdfFontName="Helvetica"/>
+				</textElement>
+				<textFieldExpression class="java.util.Date"><![CDATA[$P{DateAcct2}]]></textFieldExpression>
+			</textField>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="14">
+			<printWhenExpression><![CDATA[( 1 == 2)
+?
+( Boolean.TRUE )
+:
+( Boolean.FALSE )]]></printWhenExpression>
+			<textField isBlankWhenNull="false">
+				<reportElement key="textField" x="0" y="0" width="395" height="14"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{value}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band/>
+	</columnFooter>
+	<pageFooter>
+		<band/>
+	</pageFooter>
+	<summary>
+		<band height="760">
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField" mode="Opaque" x="395" y="20" width="70" height="12" backcolor="#CCCCCC"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{A_A}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-1" mode="Opaque" x="0" y="20" width="395" height="12" backcolor="#CCCCCC"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[A) ACTIVO NO CORRIENTE (1+2+3+4+5+6)]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-21" mode="Opaque" x="465" y="20" width="70" height="12" backcolor="#CCCCCC">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{A_A_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-44" x="395" y="32" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{A_A_1}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-25" x="35" y="32" width="360" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[I. Inmovilizado intangible.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement key="staticText-48" x="47" y="351" width="348" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="false" pdfFontName="Helvetica"/>
+				</textElement>
+				<text><![CDATA[2. (Capital no exigido)]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-87" x="465" y="351" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_A_1_2_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-88" x="395" y="363" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_A_2}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-49" x="30" y="363" width="365" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[II. Prima de emisión.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-89" x="465" y="363" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_A_2_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-90" x="395" y="375" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_A_3}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-50" x="30" y="375" width="365" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[III. Reservas.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-91" x="465" y="375" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_A_3_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-92" x="395" y="387" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_A_4}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-51" x="30" y="387" width="365" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[IV. (Acciones y participaciones en patrimonio propias)]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-93" x="465" y="387" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_A_4_BEFORE}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-52" x="0" y="277" width="195" height="16"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[Patrimonio Neto y Pasivo]]></text>
+			</staticText>
+			<line>
+				<reportElement key="line-2" x="0" y="294" width="535" height="1"/>
+			</line>
+			<textField pattern="yyyy" isBlankWhenNull="false">
+				<reportElement key="textField-94" x="395" y="278" width="70" height="16"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="10" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<textFieldExpression class="java.util.Date"><![CDATA[$P{DateAcct2}]]></textFieldExpression>
+			</textField>
+			<textField pattern="" isBlankWhenNull="false">
+				<reportElement key="textField-95" x="465" y="278" width="70" height="16">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="10" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<textFieldExpression class="java.lang.Integer"><![CDATA[new Integer( $P{DateAcct1}.getYear() + 1899 )]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-53" x="200" y="277" width="195" height="16"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[Notas de la Memoria]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-96" x="395" y="399" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_A_5}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-54" x="30" y="399" width="365" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[V. Resultados de ejercicios anteriores.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-97" x="465" y="399" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_A_5_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-98" x="395" y="411" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_A_6}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-55" x="30" y="411" width="365" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[VI. Otras aportaciones de socios.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-99" x="465" y="411" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_A_6_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-100" x="395" y="423" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_A_7}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-56" x="30" y="423" width="365" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[VII. Resultado del ejercicio.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-101" x="465" y="423" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_A_7_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-102" x="395" y="435" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_A_8}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-57" x="30" y="435" width="365" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[VIII. (Dividendo a cuenta)]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-103" x="465" y="435" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_A_8_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-104" mode="Opaque" x="395" y="315" width="70" height="12" backcolor="#CCCCCC"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_A1}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-58" mode="Opaque" x="0" y="315" width="395" height="12" backcolor="#CCCCCC"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[A-1) FONDOS PROPIOS (1+2+3+4+5+6+7+8)]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-105" mode="Opaque" x="465" y="315" width="70" height="12" backcolor="#CCCCCC">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_A1_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-106" mode="Opaque" x="395" y="447" width="70" height="12" backcolor="#CCCCCC"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_A2}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-59" mode="Opaque" x="0" y="447" width="395" height="12" backcolor="#CCCCCC"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[A-2) SUBVENCIONES, DONACIONES Y LEGADOS RECIBIDOS]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-107" mode="Opaque" x="465" y="447" width="70" height="12" backcolor="#CCCCCC">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_A2_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-108" mode="Opaque" x="395" y="300" width="70" height="12" backcolor="#CCCCCC"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_A}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-60" mode="Opaque" x="0" y="300" width="395" height="12" backcolor="#CCCCCC"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[A) PATRIMONIO NETO (A-1 + A-2)]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-109" mode="Opaque" x="465" y="300" width="70" height="12" backcolor="#CCCCCC">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_A_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-110" x="395" y="479" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_B_1}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-61" x="30" y="491" width="365" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[II. Deudas a largo plazo.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-111" x="465" y="479" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_B_1_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-112" x="395" y="491" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_B_2}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-62" x="60" y="503" width="335" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="false" pdfFontName="Helvetica"/>
+				</textElement>
+				<text><![CDATA[1. Deudas con entidades de crédito.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-113" x="465" y="491" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_B_2_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-114" x="395" y="503" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_B_2_1}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-63" x="60" y="515" width="335" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="false" pdfFontName="Helvetica"/>
+				</textElement>
+				<text><![CDATA[2. Acreedores or arrendamiento financiero.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-115" x="465" y="503" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_B_2_1_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-116" x="395" y="515" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_B_2_2}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-64" x="30" y="479" width="365" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[I. Provisiones a largo plazo.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-117" x="465" y="515" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_B_2_2_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-118" x="395" y="527" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_B_2_3}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-119" x="465" y="527" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_B_2_3_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-120" x="395" y="539" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_B_3}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-66" x="30" y="539" width="365" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[III. Deudas con empresas del grupo y asociadas a largo plazo.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-121" x="465" y="539" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_B_3_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-122" x="395" y="551" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_B_4}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-67" x="30" y="551" width="365" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[IV. Pasivos por impuesto diferido.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-123" x="465" y="551" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_B_4_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-124" x="395" y="563" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_B_5}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-68" x="30" y="563" width="365" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[V. Periodificaciones a largo plazo.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-125" x="465" y="563" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_B_5_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-126" mode="Opaque" x="395" y="467" width="70" height="12" backcolor="#CCCCCC"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_B}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-69" mode="Opaque" x="0" y="467" width="395" height="12" backcolor="#CCCCCC"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[B) PASIVO NO CORRIENTE (1+2+3+4+5)]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-127" mode="Opaque" x="465" y="467" width="70" height="12" backcolor="#CCCCCC">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_B_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-128" x="395" y="618" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_C_2_1}.add( $V{P_C_2_2} ).add( $V{P_C_2_3} )]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-70" x="30" y="618" width="365" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[II, Deudas a corto plazo.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-129" x="465" y="618" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_C_2_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-130" x="395" y="630" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_C_2_1}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-71" x="60" y="630" width="335" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="false" pdfFontName="Helvetica"/>
+				</textElement>
+				<text><![CDATA[1. Deudas con entidades de crédito.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-131" x="465" y="630" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_C_2_1_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-132" x="395" y="642" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_C_2_2}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-72" x="60" y="642" width="335" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="false" pdfFontName="Helvetica"/>
+				</textElement>
+				<text><![CDATA[2. Acreedores por arrendamiento financiero.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-133" x="465" y="642" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_C_2_2_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-134" x="395" y="666" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_C_3}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-73" x="30" y="666" width="365" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[III. Deudas con empresas del grupo y asociadas a corto plazo.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-135" x="465" y="666" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_C_3_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-138" x="395" y="714" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_C_5}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-75" x="30" y="714" width="365" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[V. Periodificaciones a corto plazo.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-139" x="465" y="714" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_C_5_BEFORE}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-79" x="60" y="527" width="335" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="false" pdfFontName="Helvetica"/>
+				</textElement>
+				<text><![CDATA[3. Otras deudas a largo plazo.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-146" x="395" y="606" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_C_1}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-147" x="465" y="606" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_C_1_BEFORE}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-80" x="30" y="606" width="365" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[I. Provisiones a corto plazo.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-148" x="395" y="654" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_C_2_3}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-81" x="60" y="654" width="335" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="false" pdfFontName="Helvetica"/>
+				</textElement>
+				<text><![CDATA[3. Otras deudas a corto plazo.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-149" x="465" y="654" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_C_2_3_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-150" x="395" y="678" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_C_4}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-82" x="30" y="678" width="365" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[IV. Acreedores comerciales y otras cuentas a pagar.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-151" x="465" y="678" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_C_4_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-152" x="395" y="690" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_C_4_1}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-83" x="60" y="690" width="335" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="false" pdfFontName="Helvetica"/>
+				</textElement>
+				<text><![CDATA[1. Proveedores.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-153" x="465" y="690" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_C_4_1_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-154" x="395" y="702" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_C_4_2}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-84" x="60" y="702" width="335" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="false" pdfFontName="Helvetica"/>
+				</textElement>
+				<text><![CDATA[2. Otros acreedores.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-155" x="465" y="702" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_C_4_2_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-156" mode="Opaque" x="395" y="594" width="70" height="12" backcolor="#CCCCCC"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_C}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-85" mode="Opaque" x="0" y="594" width="395" height="12" backcolor="#CCCCCC"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[C) PASIVO CORRIENTE (1+2+3+4+5)]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-157" mode="Opaque" x="465" y="594" width="70" height="12" backcolor="#CCCCCC">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_C_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-158" mode="Opaque" x="395" y="748" width="70" height="12" backcolor="#CCCCCC"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_TOTAL}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-86" mode="Opaque" x="0" y="748" width="395" height="12" backcolor="#CCCCCC"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[TOTAL PATRIMONIO NETO Y PASIVO (A+B+C)]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-159" mode="Opaque" x="465" y="748" width="70" height="12" backcolor="#CCCCCC">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_TOTAL_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="" isBlankWhenNull="false">
+				<reportElement key="textField-160" x="465" y="0" width="70" height="16">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="10" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<textFieldExpression class="java.lang.Integer"><![CDATA[new Integer( $P{DateAcct1}.getYear() + 1899 )]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-45" x="465" y="32" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{A_A_1_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-46" x="395" y="44" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{A_A_2}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-26" x="35" y="44" width="360" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[II. Inmovilizado material.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-47" x="465" y="44" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{A_A_2_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-48" x="395" y="56" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{A_A_3}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-27" x="35" y="56" width="360" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[III. Inversiones inmobiliarias.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-50" x="395" y="68" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{A_A_4}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-49" x="465" y="56" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{A_A_3_BEFORE}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-28" x="35" y="68" width="360" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[IV. Inversiones en empresas del grupo y asociadas a largo plazo.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement key="staticText-29" x="35" y="80" width="360" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[V. Inversiones financieras a largo plazo.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-51" x="465" y="68" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{A_A_4_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-54" x="395" y="92" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{A_A_6}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-52" x="395" y="80" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{A_A_5}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-53" x="465" y="80" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{A_A_5_BEFORE}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-31" x="35" y="125" width="360" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[I. Existencias.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-58" x="395" y="137" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{A_B_2}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-32" x="35" y="137" width="360" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[II. Deudores comerciales y otras cuentas a cobrar.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-60" x="395" y="149" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="false" pdfFontName="Helvetica"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{A_B_2_1}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-55" x="465" y="92" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{A_A_6_BEFORE}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-33" x="65" y="149" width="330" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="false" pdfFontName="Helvetica"/>
+				</textElement>
+				<text><![CDATA[1. Clientes por ventas y prestaciones de servicios.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-59" x="465" y="137" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{A_B_2_BEFORE}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-34" x="65" y="161" width="330" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="false" pdfFontName="Helvetica"/>
+				</textElement>
+				<text><![CDATA[2. Accionistas (socios) por desembolsos exigidos.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-66" x="395" y="185" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{A_B_3}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-35" x="65" y="173" width="330" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="false" pdfFontName="Helvetica"/>
+				</textElement>
+				<text><![CDATA[3. Otros deudores.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-62" x="395" y="161" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="false" pdfFontName="Helvetica"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{A_B_2_2}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-68" x="395" y="197" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{A_B_4}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-39" x="35" y="221" width="360" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[VI. Efectivo y otros activos líquidos equivalentes.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement key="staticText-37" x="35" y="197" width="360" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[IV. Inversiones financieras a corto plazo.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement key="staticText-40" mode="Opaque" x="0" y="113" width="395" height="12" backcolor="#CCCCCC"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[B) ACTIVO CORRIENTE (1+2+3+4+5+6)]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-65" x="465" y="173" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="false" pdfFontName="Helvetica"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{A_B_2_3_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-74" mode="Opaque" x="395" y="113" width="70" height="12" backcolor="#CCCCCC"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{A_B}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-43" x="0" y="0" width="195" height="16"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[Activo]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-75" mode="Opaque" x="465" y="113" width="70" height="12" backcolor="#CCCCCC">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{A_B_BEFORE}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement key="line-1" x="0" y="17" width="535" height="1"/>
+			</line>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-77" mode="Opaque" x="395" y="245" width="70" height="12" backcolor="#CCCCCC">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{A_TOTAL_BEFORE}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-44" x="200" y="0" width="195" height="16"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[Notas de la Memoria]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-57" x="465" y="125" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{A_B_1_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-64" x="395" y="173" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="false" pdfFontName="Helvetica"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{A_B_2_3}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-36" x="35" y="185" width="360" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[III. Inversiones en empresas del grupo y asociados a corto plazo.]]></text>
+			</staticText>
+			<textField pattern="yyyy" isBlankWhenNull="false">
+				<reportElement key="textField-78" x="395" y="1" width="70" height="16"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="10" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<textFieldExpression class="java.util.Date"><![CDATA[$P{DateAcct2}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-67" x="465" y="185" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{A_B_3_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-73" x="465" y="221" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{A_B_6_BEFORE}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-47" x="47" y="339" width="348" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="false" pdfFontName="Helvetica"/>
+				</textElement>
+				<text><![CDATA[1. Capital escriturado.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement key="staticText-41" mode="Opaque" x="0" y="245" width="395" height="12" backcolor="#CCCCCC"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[TOTAL ACTIVO (A+B)]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-70" x="395" y="209" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{A_B_5}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-38" x="35" y="209" width="360" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[V. Periodificaciones a corto plazo.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-82" x="395" y="327" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_A_1}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-86" x="395" y="351" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_A_1_2}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-85" x="465" y="339" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_A_1_1_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-61" x="465" y="149" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="false" pdfFontName="Helvetica"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{A_B_2_1_BEFORE}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-30" x="35" y="92" width="360" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[VI. Activos por impuesto diferido.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-72" x="395" y="221" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{A_B_6}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-56" x="395" y="125" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{A_B_1}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-84" x="395" y="339" width="70" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_A_1_1}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-71" x="465" y="209" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{A_B_5_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-76" mode="Opaque" x="395" y="245" width="70" height="12" backcolor="#CCCCCC"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{A_TOTAL}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-83" x="465" y="327" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{P_A_1_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-69" x="465" y="197" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{A_B_4_BEFORE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-63" x="465" y="161" width="70" height="12">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="false" pdfFontName="Helvetica"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{A_B_2_2_BEFORE}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="staticText-46" x="30" y="327" width="365" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[I. Capital suscrito.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00;-#,##0.00" isBlankWhenNull="false">
+				<reportElement key="textField-75" mode="Opaque" x="465" y="245" width="70" height="12" backcolor="#CCCCCC">
+					<printWhenExpression><![CDATA[new Boolean( $P{Before}.equals("Y") )]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[]]></textFieldExpression>
+			</textField>
+		</band>
+	</summary>
+</jasperReport>
